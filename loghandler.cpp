@@ -14,10 +14,10 @@ void loghandler(QtMsgType type, const QMessageLogContext &context, const QString
 {
     switch (type) {
     case QtDebugMsg:
-        fprintf(stderr, "Debug: %s (%s:%u, %s)\n", msg.toStdString().c_str(), context.file, context.line, context.function);
+        fprintf(stderr, "Debug: %s \t\t(%s:%u, %s)\n", msg.toStdString().c_str(), context.file, context.line, context.function);
         break;
     case QtInfoMsg:
-        fprintf(stderr, "Info: %s (%s:%u, %s)\n", msg.toStdString().c_str(), context.file, context.line, context.function);
+        fprintf(stderr, "Info: %s \t\t(%s:%u, %s)\n", msg.toStdString().c_str(), context.file, context.line, context.function);
         break;
     case QtWarningMsg:
     {
@@ -32,7 +32,7 @@ void loghandler(QtMsgType type, const QMessageLogContext &context, const QString
             fprintf(stderr, "Failed to open log file: %s\n", logFile.errorString().toStdString().c_str());
         }
 
-        fprintf(stderr, "Warning: %s (%s:%u, %s)\n", msg.toStdString().c_str(), context.file, context.line, context.function);
+        fprintf(stderr, "Warning: %s \t\t(%s:%u, %s)\n", msg.toStdString().c_str(), context.file, context.line, context.function);
         break;
     }
     case QtCriticalMsg:
@@ -47,7 +47,7 @@ void loghandler(QtMsgType type, const QMessageLogContext &context, const QString
         {
             fprintf(stderr, "Failed to open log file: %s\n", logFile.errorString().toStdString().c_str());
         }
-        fprintf(stderr, "Critical: %s (%s:%u, %s)\n", msg.toStdString().c_str(), context.file, context.line, context.function);
+        fprintf(stderr, "Critical: %s \t\t(%s:%u, %s)\n", msg.toStdString().c_str(), context.file, context.line, context.function);
         break;
     }
     case QtFatalMsg:
@@ -62,11 +62,11 @@ void loghandler(QtMsgType type, const QMessageLogContext &context, const QString
         {
             fprintf(stderr, "Failed to open log file: %s\n", logFile.errorString().toStdString().c_str());
         }
-        fprintf(stderr, "Fatal: %s (%s:%u, %s)\n", msg.toStdString().c_str(), context.file, context.line, context.function);
+        fprintf(stderr, "Fatal: %s \t\t(%s:%u, %s)\n", msg.toStdString().c_str(), context.file, context.line, context.function);
         abort();
     }
     default:
-        fprintf(stderr, "Undefined message type: %s (%s:%u, %s)\n", msg.toStdString().c_str(), context.file, context.line, context.function);
+        fprintf(stderr, "Undefined message type: %s \t\t(%s:%u, %s)\n", msg.toStdString().c_str(), context.file, context.line, context.function);
         break;
     }
 }
@@ -86,7 +86,9 @@ LogHandler::LogHandler()
         logFilePath = tempPath;
     }
 
-    QDir dir(logFilePath + "/");
+    logFilePath += "/";
+
+    QDir dir(logFilePath);
     if(!dir.exists())
     {
         if(!dir.mkpath(logFilePath))

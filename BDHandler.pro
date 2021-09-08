@@ -11,7 +11,8 @@ CONFIG -= app_bundle
 SOURCES += \
         databasehandler.cpp \
         loghandler.cpp \
-        main.cpp
+        main.cpp \
+        testhandler.cpp
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin
@@ -20,4 +21,5 @@ else: unix:!android: target.path = /opt/$${TARGET}/bin
 
 HEADERS += \
     databasehandler.h \
-    loghandler.h
+    loghandler.h \
+    testhandler.h

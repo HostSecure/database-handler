@@ -2,55 +2,11 @@
 
 #include "loghandler.h"
 #include "databasehandler.h"
-
-
-void testCaseEdgeNode(DatabaseHandler& db)
-{
-}
-
-void testCaseVendor(DatabaseHandler& db)
-{
-}
-
-void testCaseProduct(DatabaseHandler& db)
-{
-}
-
-void testVirus(DatabaseHandler& db)
-{
-}
-
-void testCaseDevice(DatabaseHandler& db)
-{
-}
-
-void testCaseEdgeNodeOnlineStatus(DatabaseHandler& db)
-{
-}
-
-void testCaseDeviceStatus(DatabaseHandler& db)
-{
-}
-
-void testCaseLog(DatabaseHandler& db)
-{
-}
-
-void testCaseAll(DatabaseHandler& db)
-{
-    testCaseEdgeNode(db);
-    testCaseVendor(db);
-    testCaseProduct(db);
-    testVirus(db);
-    testCaseDevice(db);
-    testCaseEdgeNodeOnlineStatus(db);
-    testCaseDeviceStatus(db);
-    testCaseLog(db);
-}
+#include "testhandler.h"
 
 int main(int argc, char *argv[])
 {
-    bool test = false;
+    bool test = true;
     LogHandler logger;
 
     QCoreApplication a(argc, argv);
@@ -58,8 +14,8 @@ int main(int argc, char *argv[])
     // TODO: Nobody likes hardcoded paths
     if(test)
     {
-        DatabaseHandler dbHandler("/home/kali/QtProjects/TestDatabase/testcases.db");
-        testCaseAll(dbHandler);
+        TestHandler testHandler("/home/kali/QtProjects/TestDatabase/testcases.db");
+        testHandler.testCaseAll();
     }
     else
     {
