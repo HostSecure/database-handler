@@ -44,9 +44,11 @@ DatabaseHandler::DatabaseHandler(const QString& databasePath)
     }
     else
     {
+        QSqlQuery query;
+        query.exec("PRAGMA foreign_keys = ON;");
+
         if(!exists)
         {
-            QSqlQuery query;
 //            query.exec(CREATE + EDGENODE + "(" + EDGENODEID + " " + EDGENODEIDTYPE + " " + PRIMARY + ", " + EDGENODEDESCRIPTTION + " " + EDGENODEDESCRIPTIONTYPE + ")");
             query.exec("CREATE TABLE edgenode(macaddress VARCHAR(8) PRIMARY KEY, isonline BIT NOT NULL, lastheartbeat TIMESTAMP NOT NULL)");
 //            query.exec(CREATE + VENDOR + "(" + VENDORID + " " + VENDORIDTYPE + " " + PRIMARY + ", " + VENDORNAME + " " + VENDORNAMETYPE + ")");
@@ -54,22 +56,24 @@ DatabaseHandler::DatabaseHandler(const QString& databasePath)
             query.exec("CREATE TABLE product(productid VARCHAR(4) PRIMARY KEY, productname VARCHAR(30))");
             query.exec("CREATE TABLE virushash(hashkey VARCHAR(32) PRIMARY KEY, description VARCHAR(100))");
 
-            query.exec("CREATE TABLE devicedata(productid VARCHAR(4), vendorid VARCHAR(4), "
-                                               "FOREIGN KEY(productid) REFERENCES product(productid), "
-                                               "FOREIGN KEY (vendorid) REFERENCES vendor(vendorid), "
-                                               "PRIMARY KEY(productid, vendorid))");
+            if(!query.exec("CREATE TABLE productvendor(productid VARCHAR(4), vendorid VARCHAR(4), "
+                                                  "FOREIGN KEY(productid) REFERENCES product(productid), "
+                                                  "FOREIGN KEY(vendorid) REFERENCES vendor(vendorid), "
+                                                  "PRIMARY KEY(productid, vendorid))"))
+            {
+                qInfo() << "Failed";
+            }
 
             query.exec("CREATE TABLE device(serialnumber VARCHAR(8) PRIMARY KEY, productid VARCHAR(4) NOT NULL, vendorid VARCHAR(4) NOT NULL, status CHAR(1) NOT NULL, "
-                                           "FOREIGN KEY(productid) REFERENCES devicedata(productid), "
-                                           "FOREIGN KEY(vendorid) REFERENCES devicedata(vendorid))");
+                       "FOREIGN KEY(productid, vendorid) REFERENCES productvendor(productid, vendorid))");
 
             query.exec("CREATE TABLE log(edgenodemacaddress VARCHAR(8), "
-                                        "deviceid VARCHAR(8), "
-                                        "logtime TIMESTAMP, "
-                                        "loginfo VARCHAR(100), "
-                                        "FOREIGN KEY (edgenodemacaddress) REFERENCES edgenode(macaddress), "
-                                        "FOREIGN KEY (deviceid) REFERENCES device(serialnumber), "
-                                        "PRIMARY KEY(edgenodemacaddress, deviceid, logtime))");
+                       "deviceid VARCHAR(8), "
+                       "logtime TIMESTAMP, "
+                       "loginfo VARCHAR(100), "
+                       "FOREIGN KEY (edgenodemacaddress) REFERENCES edgenode(macaddress), "
+                       "FOREIGN KEY (deviceid) REFERENCES device(serialnumber), "
+                       "PRIMARY KEY(edgenodemacaddress, deviceid, logtime))");
 
             // TODO: Import data
         }
@@ -185,14 +189,14 @@ void DatabaseHandler::getOnlineEdgeNodes(QVector<QString> &macAddresses) const
     }
 }
 
-void DatabaseHandler::registerDevice(const QString &serialNumber, const QString &vendorId, const QString &productId) const
+void DatabaseHandler::registerDevice(const QString &serialNumber, const QString &productId, const QString &vendorId) const
 {
     QSqlQuery query;
     query.prepare("INSERT INTO device(serialnumber, productid, vendorid, status)"
-                  "VALUES(?, ?, ?, ?");
+                  "VALUES(?, ?, ?, ?)");
     query.bindValue(0, serialNumber);
-    query.bindValue(1, vendorId);
-    query.bindValue(2, productId);
+    query.bindValue(1, productId);
+    query.bindValue(2, vendorId);
     query.bindValue(3, DEVICE_STATUS_UNKNOWN);
 
     if(!query.exec())
@@ -214,8 +218,8 @@ bool DatabaseHandler::getDevice(const QString &serialNumber, Device &device) con
         if(query.next())
         {
             device.serialNumber = query.value(0).toString();
-            device.vendorId = query.value(1).toString();
-            device.productId = query.value(2).toString();
+            device.productId = query.value(1).toString();
+            device.vendorId = query.value(2).toString();
             success = true;
         }
     }
@@ -373,7 +377,7 @@ void DatabaseHandler::getAllVendorKeys(QVector<QString> &vendorIds) const
     }
 }
 
-void DatabaseHandler::getAllVendors(std::vector<std::unique_ptr<Vendor> > vendors) const
+void DatabaseHandler::getAllVendors(std::vector<std::unique_ptr<Vendor> >& vendors) const
 {
     QSqlQuery query;
     if(query.exec("SELECT * FROM vendor"))
@@ -446,7 +450,7 @@ void DatabaseHandler::getAllProductKeys(QVector<QString> &productIds) const
     }
 }
 
-void DatabaseHandler::getAllProducts(std::vector<std::unique_ptr<Product> > products) const
+void DatabaseHandler::getAllProducts(std::vector<std::unique_ptr<Product> >& products) const
 {
     QSqlQuery query;
     if(query.exec("SELECT * FROM product"))
@@ -463,6 +467,21 @@ void DatabaseHandler::getAllProducts(std::vector<std::unique_ptr<Product> > prod
     {
         qCritical() << __PRETTY_FUNCTION__ << "Failed to get all products: " << query.lastError();
         throw std::runtime_error("Failed to get all products");
+    }
+}
+
+void DatabaseHandler::linkProductVendor(const QString &productId, const QString &vendorId)
+{
+    QSqlQuery query;
+    query.prepare("INSERT INTO productvendor(productid, vendorid)"
+                  "VALUES(?, ?)");
+    query.bindValue(0, productId);
+    query.bindValue(1, vendorId);
+
+    if(!query.exec())
+    {
+        qCritical() << __PRETTY_FUNCTION__ << "Failed to register productvendor: " << query.lastError();
+        throw std::runtime_error("Failed to register productvendor");
     }
 }
 
@@ -566,7 +585,7 @@ void DatabaseHandler::logEvent(const QString &edgeNodeMacAddress, const QString 
 {
     QSqlQuery query;
     query.prepare("INSERT INTO log(edgenodemacaddress, deviceid, logtime, loginfo)"
-                  "VALUES(?, ?, ?, ?, ?");
+                  "VALUES(?, ?, ?, ?)");
     query.bindValue(0, edgeNodeMacAddress);
     query.bindValue(1, deviceSerialNumber);
     query.bindValue(2, timestamp);
@@ -608,7 +627,7 @@ bool DatabaseHandler::getLoggedEvent(const QString &edgeNodeMacAddress, const QS
     return success;
 }
 
-void DatabaseHandler::getAllLoggedEvents(std::vector<std::unique_ptr<LogEvent> > loggedEvents) const
+void DatabaseHandler::getAllLoggedEvents(std::vector<std::unique_ptr<LogEvent> >& loggedEvents) const
 {
     QSqlQuery query;
     if(query.exec("SELECT * FROM log"))

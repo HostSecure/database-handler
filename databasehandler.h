@@ -34,7 +34,7 @@ public:
         QString vendorId = "";
         QString productId = "";
     };
-    void registerDevice(const QString& serialNumber, const QString& vendorId, const QString& productId) const;
+    void registerDevice(const QString& serialNumber, const QString& productId, const QString& vendorId) const;
     bool getDevice(const QString& serialNumber, Device& device) const;
     void getAllDeviceKeys(QVector<QString>& serialNumbers) const;
     void getAllDevices(std::vector<std::unique_ptr<Device>>& devices) const;
@@ -52,7 +52,7 @@ public:
     void registerVendor(const QString& vendorId, const QString& vendorName);
     bool getVendor(const QString& vendorId, Vendor& vendor) const;
     void getAllVendorKeys(QVector<QString>& vendorIds) const;
-    void getAllVendors(std::vector<std::unique_ptr<Vendor>> vendors) const;
+    void getAllVendors(std::vector<std::unique_ptr<Vendor>>& vendors) const;
 
     //Product
     struct Product
@@ -63,7 +63,10 @@ public:
     void registerProduct(const QString& productId, const QString& productName);
     bool getProduct(const QString& productId, Product& product) const;
     void getAllProductKeys(QVector<QString>& productIds) const;
-    void getAllProducts(std::vector<std::unique_ptr<Product>> products) const;
+    void getAllProducts(std::vector<std::unique_ptr<Product>>& products) const;
+
+    // ProductVendor
+    void linkProductVendor(const QString& productId, const QString& vendorId);
 
     // Virus
     struct VirusHash
@@ -87,7 +90,7 @@ public:
     };
     void logEvent(const QString& edgeNodeMacAddress, const QString& deviceSerialNumber, const QString& timestamp, const QString& eventDescription);
     bool getLoggedEvent(const QString& edgeNodeMacAddress, const QString deviceSerialNumber, const QString& timestamp, LogEvent& logEvent) const;
-    void getAllLoggedEvents(std::vector<std::unique_ptr<LogEvent>> loggedEvents) const;
+    void getAllLoggedEvents(std::vector<std::unique_ptr<LogEvent>>& loggedEvents) const;
 
 private:
     void getKeysFromTable(const QString keyName, const QString& tableName, QVector<QString>& result) const;
