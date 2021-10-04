@@ -1,26 +1,31 @@
 #include <QCoreApplication>
 
-#include "loghandler.h"
-#include "databasehandler.h"
-#include "testhandler.h"
+#include <loghandler.h>
+#include <databasemanager.h>
+#include <testhandler.h>
 
 int main(int argc, char *argv[])
 {
-    bool test = true;
+    bool test = false;
     LogHandler logger;
 
     QCoreApplication a(argc, argv);
 
-    // TODO: Nobody likes hardcoded paths
+    const char* dataDir = getenv("HOSTSECURE_DATA_DIR");
+    if(dataDir == nullptr)
+    {
+        dataDir = ".";
+    }
+
     if(test)
     {
-        TestHandler testHandler("/home/kali/QtProjects/TestDatabase/testcases.db");
+        TestHandler testHandler(QString(dataDir).append("/Databases/testcases.db"));
         testHandler.testCaseAll();
+        return a.exec();
     }
     else
     {
-        DatabaseHandler dbHandler("/home/kali/QtProjects/TestDatabase/test.db");
+        DatabaseManager dbAdmin(QString(dataDir).append("/Databases/HostSecure.db"), &a);
+        return a.exec();
     }
-
-    return a.exec();
 }
